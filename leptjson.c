@@ -132,10 +132,49 @@ static int lept_parse_string(lept_context *c, lept_value *v)
             case '\0':
                 c->top = head;
                 return LEPT_PARSE_MISS_QUOTATION_MARK;
-            /* Todo: handle escape characters */
-            /* Todo: handle invalid characters */
+            case '\\':
+                switch (*p++) {
+                    case '"':
+                        PUTC(c, '"');
+                        break;
+                    case '\\':
+                        PUTC(c, '\\');
+                        break;
+                    case '/':
+                        PUTC(c, '/');
+                        break;
+                    case 'b':
+                        PUTC(c, '\b');
+                        break;
+                    case 'f':
+                        PUTC(c, '\f');
+                        break;
+                    case 'n':
+                        PUTC(c, '\n');
+                        break;
+                    case 'r':
+                        PUTC(c, '\r');
+                        break;
+                    case 't':
+                        PUTC(c, '\t');
+                        break;
+                    case 'u':
+                        /* Todo: handle escape characters in the form \uxxxx */
+                        c->top = head;
+                        return LEPT_PARSE_INVALID_STRING_ESCAPE;
+                    default:
+                        c->top = head;
+                        return LEPT_PARSE_INVALID_STRING_ESCAPE;
+                }
+                break;
             default:
-                PUTC(c, ch);
+                /* handle invalid characters */
+                if((0x20 <= ch && ch <= 0x21) || (0x23 <= ch && ch <= 0x5B) || (0x5D <= ch && ch <= 0x10FFFF)) {
+                    PUTC(c, ch);
+                } else {
+                    c->top = head;
+                    return LEPT_PARSE_INVALID_STRING_CHAR;
+                }
         }
     }
 }
