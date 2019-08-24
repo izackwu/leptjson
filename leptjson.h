@@ -29,14 +29,18 @@ enum {
 
 int lept_parse(lept_value *v, const char *json);
 
-lept_type lept_get_type(const lept_value *v);
-
-double lept_get_number(const lept_value *v);
-
 #define lept_init(v) do { (v)->type = LEPT_NULL; } while(0)
 void lept_free(lept_value *v);
 
 #define lept_set_null(v) lept_free(v)
+
+lept_type lept_get_type(const lept_value *v);
+
+double lept_get_number(const lept_value *v);
+void lept_set_number(lept_value *v, double n);
+
+int lept_get_boolean(const lept_value *v);
+void lept_set_boolean(lept_value *v, int b);
 
 const char *lept_get_string(const lept_value *v);
 size_t lept_get_string_length(const lept_value *v);

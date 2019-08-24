@@ -22,13 +22,14 @@ static int test_pass = 0;
 #define EXPECT_EQ_DOUBLE(expect, actual) EXPECT_EQ_BASE((double)(expect) == (actual), expect, actual, "%.17g")
 #define EXPECT_EQ_STRING(expect, actual, alength) \
     EXPECT_EQ_BASE(sizeof(expect) - 1 == alength && memcmp(expect, actual, alength) == 0, expect, actual, "%s")
-
+#define EXPECT_TRUE(actual) EXPECT_EQ_BASE((actual) != 0, "true", "false", "%s")
+#define EXPECT_FALSE(actual) EXPECT_EQ_BASE((actual) == 0, "false", "true", "%s")
 
 #define TEST_LITERAL(expected_type, json)\
     do{\
         lept_value v;\
         lept_init(&v);\
-        v.type = (expected_type == LEPT_FALSE ? LEPT_TRUE: LEPT_FALSE);\
+        lept_set_boolean(&v, expected_type == LEPT_FALSE);\
         EXPECT_EQ_INT(LEPT_PARSE_OK, lept_parse(&v, json));\
         EXPECT_EQ_INT(expected_type, lept_get_type(&v));\
         lept_free(&v);\
@@ -189,12 +190,47 @@ static void test_access_string()
     lept_free(&v);
 }
 
+static void test_access_null()
+{
+    lept_value v;
+    lept_init(&v);
+    lept_set_string(&v, "a", 1);
+    lept_set_null(&v);
+    EXPECT_EQ_INT(LEPT_NULL, lept_get_type(&v));
+    lept_free(&v);
+}
+
+static void test_access_boolean()
+{
+    lept_value v;
+    lept_init(&v);
+    lept_set_string(&v, "a", 1);
+    lept_set_boolean(&v, 1);
+    EXPECT_TRUE(lept_get_boolean(&v));
+    lept_set_boolean(&v, 0);
+    EXPECT_FALSE(lept_get_boolean(&v));
+    lept_free(&v);
+}
+
+static void test_access_number()
+{
+    lept_value v;
+    lept_init(&v);
+    lept_set_string(&v, "a", 1);
+    lept_set_number(&v, 3.1415926);
+    EXPECT_EQ_DOUBLE(3.1415926, lept_get_number(&v));
+    lept_free(&v);
+}
+
+
 static void test_parse()
 {
     /* literal */
     test_parse_null();
     test_parse_false();
     test_parse_true();
+    test_access_boolean();
+    test_access_null();
     /* error */
     test_parse_expect_value();
     test_parse_invalid_value();
@@ -202,6 +238,7 @@ static void test_parse()
     /* number */
     test_parse_number();
     test_parse_number_too_big();
+    test_access_number();
     /* string */
     test_parse_string();
     test_parse_missing_quotation_mark();
