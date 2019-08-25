@@ -14,6 +14,9 @@
 #define ISDIGIT1TO9(ch)     ((ch) >= '1' && (ch) <= '9')
 #define PUTC(c, ch)         do { *(char*)lept_context_push(c, sizeof(char)) = (ch); } while(0)
 
+#define LIKELY(x) __builtin_expect(!!(x), 1) /* x is very likely to be true */
+#define UNLIKELY(x) __builtin_expect(!!(x), 0) /* x is very likely to be false */
+
 typedef struct {
     const char *json;
     char *stack;
@@ -169,7 +172,7 @@ static int lept_parse_string(lept_context *c, lept_value *v)
                 break;
             default:
                 /* handle invalid characters */
-                if((unsigned char)ch < 0x20){
+                if(UNLIKELY((unsigned char)ch < 0x20)) {
                     c->top = head;
                     return LEPT_PARSE_INVALID_STRING_CHAR;
                 }
