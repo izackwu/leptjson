@@ -1,6 +1,6 @@
-#include <stdio.h> /* atoi, rand */
+#include <stdio.h> /* printf */
 #include <time.h> /* time, clock */
-#include <stdlib.h> /* rand, srand */
+#include <stdlib.h> /* rand, srand, atoi */
 #include <math.h> /* sqrt, abs, pow */
 
 #define LIKELY(x) __builtin_expect(!!(x), 1) /* x is very likely to be true */
@@ -12,49 +12,49 @@ void without_buildin_expect(int n)
 {
     clock_t before = clock();
     int i, bias, useless;
-    for(i = 0, bias = 0; i != n; ++i){
-        if(rand() + 123 < RAND_MAX / 100){
+    for(i = 0, bias = 0; i != n; ++i) {
+        if(rand() + 123 < RAND_MAX / 100) {
             ++bias;
             useless += sqrt(abs(bias));
             useless -= pow(abs(bias), 3);
-        }else{
+        } else {
             --bias;
             useless -= sqrt(abs(bias));
             useless += pow(abs(bias), 3);
         }
     }
     printf("Without __buildin_expect: %d ms. (%d iterations and %d bias)\n",
-        (clock() - before) * 1000 / CLOCKS_PER_SEC, n, bias); 
+           (clock() - before) * 1000 / CLOCKS_PER_SEC, n, bias);
 }
 
 void with_buildin_expect(int n)
 {
     clock_t before = clock();
     int i, bias, useless;
-    for(i = 0, bias = 0; i != n; ++i){
-        if(UNLIKELY(rand() + 123 < RAND_MAX / 100)){
+    for(i = 0, bias = 0; i != n; ++i) {
+        if(UNLIKELY(rand() + 123 < RAND_MAX / 100)) {
             ++bias;
             useless += sqrt(abs(bias));
             useless -= pow(abs(bias), 3);
-        }else{
+        } else {
             --bias;
             useless -= sqrt(abs(bias));
             useless += pow(abs(bias), 3);
         }
     }
     printf("With __buildin_expect: %d ms. (%d iterations and %d bias)\n",
-        (clock() - before) * 1000 / CLOCKS_PER_SEC, n, bias); 
+           (clock() - before) * 1000 / CLOCKS_PER_SEC, n, bias);
 }
 
 int main(int argc, char const *argv[])
 {
     int n;
-    if(argc == 1){
+    if(argc == 1) {
         n = DEFAULT_N;
-    }else if(argc == 2){
+    } else if(argc == 2) {
         n = atoi(argv[1]);
         n = (n <= 0 ? DEFAULT_N : n);
-    }else{
+    } else {
         printf("Too many arguments applied!\n");
         return 0;
     }
