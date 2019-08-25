@@ -169,12 +169,11 @@ static int lept_parse_string(lept_context *c, lept_value *v)
                 break;
             default:
                 /* handle invalid characters */
-                if((0x20 <= ch && ch <= 0x21) || (0x23 <= ch && ch <= 0x5B) || (0x5D <= ch && ch <= 0x10FFFF)) {
-                    PUTC(c, ch);
-                } else {
+                if((unsigned char)ch < 0x20){
                     c->top = head;
                     return LEPT_PARSE_INVALID_STRING_CHAR;
                 }
+                PUTC(c, ch);
         }
     }
 }
