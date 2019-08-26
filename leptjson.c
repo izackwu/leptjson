@@ -118,9 +118,48 @@ static int lept_parse_number(lept_context *c, lept_value *v)
     return LEPT_PARSE_OK;
 }
 
+static const char *lept_parse_hex4(const char *p, unsigned *u)
+{
+    unsigned i, temp;
+    for(i = 0, *u = 0; i != 4; ++i, ++p) {
+        if(ISDIGIT(*p)) {
+            temp = (*p) - '0';
+        } else if('a' <= (*p) && (*p) <= 'f') {
+            temp = (*p) - 'a' + 10;
+        } else if('A' <= (*p) && (*p) <= 'F') {
+            temp = (*p) - 'A' + 10;
+        } else {
+            return NULL;
+        }
+        *u = (*u << 4) | temp;
+    }
+    return p;
+}
+
+static void lept_encode_utf8(lept_context *c, unsigned u)
+{
+    assert(u <= 0x10FFFF); /* unicode character: U+0000 ~ U+10FFFF */
+    if(u <= 0x007F) {
+        PUTC(c, u);
+    } else if(u <= 0x07FF) {
+        PUTC(c, 0xC0 | (u >> 6));
+        PUTC(c, 0x80 | (u & 0x3F));
+    } else if(u <= 0xFFFF) {
+        PUTC(c, 0xE0 | (u >> 12));
+        PUTC(c, 0x80 | ((u >> 6) & 0x3F));
+        PUTC(c, 0x80 | (u & 0x3F));
+    } else {
+        PUTC(c, 0xF0 | (u >> 18));
+        PUTC(c, 0x80 | ((u >> 12) & 0x3F));
+        PUTC(c, 0x80 | ((u >> 6) & 0x3F));
+        PUTC(c, 0x80 | (u & 0x3F));
+    }
+}
+
 static int lept_parse_string(lept_context *c, lept_value *v)
 {
     size_t head = c->top, len;
+    unsigned u, low;
     const char *p;
     EXPECT(c, '\"');
     p = c->json;
@@ -162,9 +201,28 @@ static int lept_parse_string(lept_context *c, lept_value *v)
                         PUTC(c, '\t');
                         break;
                     case 'u':
-                        /* Todo: handle escape characters in the form \uxxxx */
-                        c->top = head;
-                        return LEPT_PARSE_INVALID_STRING_ESCAPE;
+                        if (!(p = lept_parse_hex4(p, &u))) {
+                            c->top = head;
+                            return LEPT_PARSE_INVALID_UNICODE_HEX;
+                        }
+                        if(0xD800 <= u && u <= 0xDBFF) { /* surrogate pair */
+                            if(!(*p++ == '\\' && *p++ == 'u')) {
+                                c->top = head;
+                                return LEPT_PARSE_INVALID_UNICODE_SURROGATE;
+                            }
+                            if(!(p = lept_parse_hex4(p, &low))) {
+                                c->top = head;
+                                return LEPT_PARSE_INVALID_UNICODE_HEX;
+                            }
+                            if(0xDC00 <= low && low <= 0xDFFF) {
+                                u = 0x10000 + (u - 0xD800) * 0x400 + (low - 0xDC00);
+                            } else {
+                                c->top = head;
+                                return LEPT_PARSE_INVALID_UNICODE_SURROGATE;
+                            }
+                        }
+                        lept_encode_utf8(c, u);
+                        break;
                     default:
                         c->top = head;
                         return LEPT_PARSE_INVALID_STRING_ESCAPE;
