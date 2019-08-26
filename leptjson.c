@@ -17,6 +17,8 @@
 #define LIKELY(x) __builtin_expect(!!(x), 1) /* x is very likely to be true */
 #define UNLIKELY(x) __builtin_expect(!!(x), 0) /* x is very likely to be false */
 
+#define RAISE_STRING_ERROR(error) do { c->top = head; return error;} while(0)
+
 typedef struct {
     const char *json;
     char *stack;
@@ -172,8 +174,7 @@ static int lept_parse_string(lept_context *c, lept_value *v)
                 c->json = p;
                 return LEPT_PARSE_OK;
             case '\0':
-                c->top = head;
-                return LEPT_PARSE_MISS_QUOTATION_MARK;
+                RAISE_STRING_ERROR(LEPT_PARSE_MISS_QUOTATION_MARK);
             case '\\':
                 switch (*p++) {
                     case '"':
@@ -202,30 +203,24 @@ static int lept_parse_string(lept_context *c, lept_value *v)
                         break;
                     case 'u':
                         if (!(p = lept_parse_hex4(p, &u))) {
-                            c->top = head;
-                            return LEPT_PARSE_INVALID_UNICODE_HEX;
+                            RAISE_STRING_ERROR(LEPT_PARSE_INVALID_UNICODE_HEX);
                         }
                         if(0xD800 <= u && u <= 0xDBFF) { /* surrogate pair */
                             if(!(*p++ == '\\' && *p++ == 'u')) {
-                                c->top = head;
-                                return LEPT_PARSE_INVALID_UNICODE_SURROGATE;
+                                RAISE_STRING_ERROR(LEPT_PARSE_INVALID_UNICODE_SURROGATE);
                             }
                             if(!(p = lept_parse_hex4(p, &low))) {
-                                c->top = head;
-                                return LEPT_PARSE_INVALID_UNICODE_HEX;
+                                RAISE_STRING_ERROR(LEPT_PARSE_INVALID_UNICODE_HEX);
                             }
-                            if(0xDC00 <= low && low <= 0xDFFF) {
-                                u = 0x10000 + (u - 0xD800) * 0x400 + (low - 0xDC00);
-                            } else {
-                                c->top = head;
-                                return LEPT_PARSE_INVALID_UNICODE_SURROGATE;
+                            if(!(0xDC00 <= low && low <= 0xDFFF)) {
+                                RAISE_STRING_ERROR(LEPT_PARSE_INVALID_UNICODE_SURROGATE);
                             }
+                            u = 0x10000 + (u - 0xD800) * 0x400 + (low - 0xDC00);
                         }
                         lept_encode_utf8(c, u);
                         break;
                     default:
-                        c->top = head;
-                        return LEPT_PARSE_INVALID_STRING_ESCAPE;
+                        RAISE_STRING_ERROR(LEPT_PARSE_INVALID_STRING_ESCAPE);
                 }
                 break;
             default:
