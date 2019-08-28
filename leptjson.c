@@ -239,7 +239,7 @@ static int lept_parse_value(lept_context *c, lept_value *v);
 
 static int lept_parse_array(lept_context *c, lept_value *v)
 {
-    size_t size = 0, init_stack_top = c->top;
+    size_t size = 0, i;
     int ret;
     EXPECT(c, '[');
     lept_parse_whitespace(c);
@@ -255,8 +255,7 @@ static int lept_parse_array(lept_context *c, lept_value *v)
         lept_init(&e);
         lept_parse_whitespace(c);
         if ((ret = lept_parse_value(c, &e)) != LEPT_PARSE_OK) {
-            lept_context_pop(c, c->top - init_stack_top);
-            return ret;
+            break;
         }
         lept_parse_whitespace(c);
         memcpy(lept_context_push(c, sizeof(lept_value)), &e, sizeof(lept_value));
@@ -271,10 +270,15 @@ static int lept_parse_array(lept_context *c, lept_value *v)
             memcpy(v->u.a.e = (lept_value *)malloc(size), lept_context_pop(c, size), size);
             return LEPT_PARSE_OK;
         } else {
-            lept_context_pop(c, c->top - init_stack_top);
-            return LEPT_PARSE_MISS_COMMA_OR_SQUARE_BRACKET;
+            ret = LEPT_PARSE_MISS_COMMA_OR_SQUARE_BRACKET;
+            break;
         }
     }
+    /* free memory to avoid leaks */
+    for (i = 0; i != size; ++i) {
+        lept_free((lept_value *)lept_context_pop(c, sizeof(lept_value)));
+    }
+    return ret;
 }
 
 static int lept_parse_value(lept_context *c, lept_value *v)
@@ -325,6 +329,12 @@ void lept_free(lept_value *v)
     assert(v != NULL);
     if (v->type == LEPT_STRING) {
         free(v->u.s.s);
+    } else if(v->type == LEPT_ARRAY) {
+        int i;
+        for(i = 0; i != v->u.a.size; ++i) {
+            lept_free(v->u.a.e + i);
+        }
+        free(v->u.a.e);
     }
     v->type = LEPT_NULL;
 }
