@@ -158,9 +158,9 @@ static void lept_encode_utf8(lept_context *c, unsigned u)
     }
 }
 
-static int lept_parse_string(lept_context *c, lept_value *v)
+static int lept_parse_string_raw(lept_context *c, const char **str, size_t *len)
 {
-    size_t head = c->top, len;
+    size_t head = c->top;
     unsigned u, low;
     const char *p;
     EXPECT(c, '\"');
@@ -169,8 +169,8 @@ static int lept_parse_string(lept_context *c, lept_value *v)
         char ch = *p++;
         switch (ch) {
             case '\"':
-                len = c->top - head;
-                lept_set_string(v, (const char *)lept_context_pop(c, len), len);
+                *len = c->top - head;
+                *str = (const char *)lept_context_pop(c, *len);
                 c->json = p;
                 return LEPT_PARSE_OK;
             case '\0':
@@ -232,6 +232,17 @@ static int lept_parse_string(lept_context *c, lept_value *v)
                 PUTC(c, ch);
         }
     }
+}
+
+static int lept_parse_string(lept_context *c, lept_value *v)
+{
+    int ret;
+    const char *s;
+    size_t len;
+    if ((ret = lept_parse_string_raw(c, &s, &len)) == LEPT_PARSE_OK) {
+        lept_set_string(v, s, len);
+    }
+    return ret;
 }
 
 /* forward declaration for mutual recursion */
