@@ -51,6 +51,7 @@ enum {
 };
 
 int lept_parse(lept_value *v, const char *json);
+char *lept_stringify(const lept_value *v, size_t *length);
 
 #define lept_init(v) do { (v)->type = LEPT_NULL; } while(0)
 void lept_free(lept_value *v);

@@ -527,3 +527,9 @@ lept_value *lept_get_object_value(const lept_value *v, size_t index)
     assert(0 <= index && index < v->u.o.size);
     return &((v->u.o.m + index)->v);
 }
+
+char *lept_stringify(const lept_value *v, size_t *length)
+{
+    /* Todo */
+    return NULL;
+}
