@@ -4,15 +4,21 @@
 #include <errno.h> /* errno, ERANGE */
 #include <math.h> /* HUGE_VAL */
 #include <string.h>  /* memcpy() */
+#include <stdio.h>  /* sprintf() */
 
 #ifndef LEPT_PARSE_STACK_INIT_SIZE
     #define LEPT_PARSE_STACK_INIT_SIZE 256
+#endif
+
+#ifndef LEPT_PARSE_STRINGIFY_INIT_SIZE
+    #define LEPT_PARSE_STRINGIFY_INIT_SIZE 256
 #endif
 
 #define EXPECT(c, ch)       do { assert(*c->json == (ch)); c->json++; } while(0)
 #define ISDIGIT(ch)         ((ch) >= '0' && (ch) <= '9')
 #define ISDIGIT1TO9(ch)     ((ch) >= '1' && (ch) <= '9')
 #define PUTC(c, ch)         do { *(char*)lept_context_push(c, sizeof(char)) = (ch); } while(0)
+#define PUTS(c, s, len)     memcpy(lept_context_push(c, len), s, len)
 
 #define LIKELY(x) __builtin_expect(!!(x), 1) /* x is very likely to be true */
 #define UNLIKELY(x) __builtin_expect(!!(x), 0) /* x is very likely to be false */
@@ -528,8 +534,104 @@ lept_value *lept_get_object_value(const lept_value *v, size_t index)
     return &((v->u.o.m + index)->v);
 }
 
+static void lept_stringify_string(lept_context *c, const char *s, size_t len)
+{
+    size_t i;
+    PUTC(c, '\"');
+    for(i = 0; i != len; ++i) {
+        const char ch = *(s + i);
+        switch(ch) {
+            case '"':
+                PUTS(c, "\\\"", 2);
+                break;
+            case '\\':
+                PUTS(c, "\\\\", 2);
+                break;
+            case '\b':
+                PUTS(c, "\\b", 2);
+                break;
+            case '\f':
+                PUTS(c, "\\f", 2);
+                break;
+            case '\n':
+                PUTS(c, "\\n", 2);
+                break;
+            case '\r':
+                PUTS(c, "\\r", 2);
+                break;
+            case '\t':
+                PUTS(c, "\\t", 2);
+                break;
+            default:
+                if(UNLIKELY((unsigned char)ch < 0x20)) {
+                    sprintf(lept_context_push(c, 6), "\\u%04x", ch);
+                } else {
+                    PUTC(c, ch);
+                }
+        }
+    }
+    PUTC(c, '\"');
+}
+
+static void lept_stringify_value(lept_context *c, const lept_value *v)
+{
+    switch (v->type) {
+        case LEPT_NULL:
+            PUTS(c, "null",  4);
+            break;
+        case LEPT_FALSE:
+            PUTS(c, "false", 5);
+            break;
+        case LEPT_TRUE:
+            PUTS(c, "true",  4);
+            break;
+        case LEPT_NUMBER:
+            c->top -= 32 - sprintf(lept_context_push(c, 32), "%.17g", v->u.n);
+            break;
+        case LEPT_STRING:
+            lept_stringify_string(c, v->u.s.s, v->u.s.len);
+            break;
+        case LEPT_ARRAY: {
+            size_t i;
+            PUTC(c, '[');
+            for(i = 0; i != v->u.a.size; ++i) {
+                if(LIKELY(i != 0)) {
+                    PUTC(c, ',');
+                }
+                lept_stringify_value(c, v->u.a.e + i);
+            }
+            PUTC(c, ']');
+            break;
+        }
+        case LEPT_OBJECT: {
+            size_t i;
+            PUTC(c, '{');
+            for(i = 0; i != v->u.o.size; ++i) {
+                if(LIKELY(i != 0)) {
+                    PUTC(c, ',');
+                }
+                lept_stringify_string(c, (v->u.o.m + i)->k, (v->u.o.m + i)->klen);
+                PUTC(c, ':');
+                lept_stringify_value(c, &((v->u.o.m + i)->v));
+            }
+            PUTC(c, '}');
+            break;
+        }
+        default:
+            assert(0 && "invalid type");
+    }
+}
+
 char *lept_stringify(const lept_value *v, size_t *length)
 {
-    /* Todo */
-    return NULL;
+    lept_context c;
+    assert(v != NULL);
+    c.stack = (char *)malloc(c.size = LEPT_PARSE_STRINGIFY_INIT_SIZE);
+    c.top = 0;
+    lept_stringify_value(&c, v);
+    if (length) {
+        *length = c.top;
+    }
+    PUTC(&c, '\0');
+    return c.stack;
 }
