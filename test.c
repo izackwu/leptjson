@@ -674,8 +674,7 @@ static void test_copy()
 {
     lept_value v1, v2;
     lept_init(&v1);
-    lept_parse(&v1, "[true, false, null, [0,false]]");
-    /*lept_parse(&v1, "{\"t\":true,\"f\":false,\"n\":null,\"d\":1.5,\"a\":[1,2,3]}");*/
+    lept_parse(&v1, "{\"t\":true,\"f\":false,\"n\":null,\"d\":1.5,\"a\":[1,2,3]}");
     lept_init(&v2);
     lept_copy(&v2, &v1);
     EXPECT_TRUE(lept_is_equal(&v2, &v1));

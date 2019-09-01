@@ -87,12 +87,6 @@ static int lept_parse_number(lept_context *c, lept_value *v)
     }
     if(*end == '0') { /* Zero must has only one digit */
         ++end;
-        /* comment these because we should treat this error as LEPT_PARSE_ROOT_NOT_SINGULAR */
-#if 0
-        if(*end == 'x' || *end == 'X') { /* Binary floating-point expression is not allowed */
-            return LEPT_PARSE_INVALID_VALUE;
-        }
-#endif
     } else { /* Nonzero should start with 1-9 */
         if(!(ISDIGIT1TO9(*end))) {
             return LEPT_PARSE_INVALID_VALUE;
