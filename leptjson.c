@@ -500,11 +500,101 @@ size_t lept_get_array_size(const lept_value *v)
     return v->u.a.size;
 }
 
+size_t lept_get_array_capacity(const lept_value *v)
+{
+    assert(v != NULL && v->type == LEPT_ARRAY);
+    return v->u.a.capacity;
+}
+
 lept_value *lept_get_array_element(const lept_value *v, size_t index)
 {
     assert(v != NULL && v->type == LEPT_ARRAY);
     assert(0 <= index && index < v->u.a.size);
     return v->u.a.e + index;
+}
+
+void lept_set_array(lept_value *v, size_t capacity)
+{
+    assert(v != NULL);
+    lept_free(v);
+    v->type = LEPT_ARRAY;
+    v->u.a.size = 0;
+    v->u.a.capacity = capacity;
+    v->u.a.e = capacity > 0 ? (lept_value *)malloc(capacity * sizeof(lept_value)) : NULL;
+}
+
+void lept_reserve_array(lept_value *v, size_t capacity)
+{
+    assert(v != NULL && v->type == LEPT_ARRAY);
+    if (v->u.a.capacity < capacity) {
+        v->u.a.capacity = capacity;
+        v->u.a.e = (lept_value *)realloc(v->u.a.e, capacity * sizeof(lept_value));
+    }
+}
+
+void lept_shrink_array(lept_value *v)
+{
+    assert(v != NULL && v->type == LEPT_ARRAY);
+    if (v->u.a.capacity > v->u.a.size) {
+        v->u.a.capacity = v->u.a.size;
+        v->u.a.e = (lept_value *)realloc(v->u.a.e, v->u.a.capacity * sizeof(lept_value));
+    }
+}
+
+lept_value *lept_pushback_array_element(lept_value *v)
+{
+    assert(v != NULL && v->type == LEPT_ARRAY);
+    if (v->u.a.size == v->u.a.capacity) {
+        lept_reserve_array(v, v->u.a.capacity == 0 ? 1 : v->u.a.capacity * 2);
+    }
+    lept_init(&v->u.a.e[v->u.a.size]);
+    return &v->u.a.e[v->u.a.size++];
+}
+
+void lept_popback_array_element(lept_value *v)
+{
+    assert(v != NULL && v->type == LEPT_ARRAY && v->u.a.size > 0);
+    lept_free(&v->u.a.e[--v->u.a.size]);
+}
+
+void lept_clear_array(lept_value *v)
+{
+    assert(v != NULL && v->type == LEPT_ARRAY);
+    while(v->u.a.size > 0) {
+        lept_free(&v->u.a.e[--v->u.a.size]);
+    }
+}
+
+lept_value *lept_insert_array_element(lept_value *v, size_t index)
+{
+    size_t i;
+    assert(v != NULL && v->type == LEPT_ARRAY);
+    assert(0 <= index && index <= v->u.a.size);   /* if index == size, then this's equivalent to pushback*/
+    if (v->u.a.size == v->u.a.capacity) {
+        lept_reserve_array(v, v->u.a.capacity == 0 ? 1 : v->u.a.capacity * 2);
+    }
+    for(i = v->u.a.size++; i != index; --i) {
+        v->u.a.e[i] = v->u.a.e[i - 1];
+    }
+    return &v->u.a.e[index];
+}
+
+void lept_erase_array_element(lept_value *v, size_t index, size_t count)
+{
+    size_t i;
+    assert(v != NULL && v->type == LEPT_ARRAY);
+    assert(0 <= index && 0 <= count && index + count <= v->u.a.size);
+    if(!count) {
+        return;
+    }
+    for(i = index; i != index + count; ++i) {
+        lept_free(&v->u.a.e[i]);
+        v->u.a.e[i] = v->u.a.e[i + count];
+    }
+    for(i = index + count; i != v->u.a.size; ++i) {
+        v->u.a.e[i] = v->u.a.e[i + count];
+    }
+    v->u.a.size -= count;
 }
 
 size_t lept_get_object_size(const lept_value *v)

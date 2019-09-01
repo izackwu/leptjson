@@ -404,6 +404,67 @@ static void test_access_number()
     lept_free(&v);
 }
 
+static void test_access_array()
+{
+    lept_value a;
+    size_t i, j;
+    lept_init(&a);
+    for (j = 0; j <= 5; j += 5) {
+        lept_set_array(&a, j);
+        EXPECT_EQ_SIZE_T(0, lept_get_array_size(&a));
+        EXPECT_EQ_SIZE_T(j, lept_get_array_capacity(&a));
+        for (i = 0; i < 10; i++) {
+            lept_set_number(lept_pushback_array_element(&a), i);
+        }
+        EXPECT_EQ_SIZE_T(10, lept_get_array_size(&a));
+        for (i = 0; i < 10; i++) {
+            EXPECT_EQ_DOUBLE((double)i, lept_get_number(lept_get_array_element(&a, i)));
+        }
+    }
+    lept_popback_array_element(&a);
+    EXPECT_EQ_SIZE_T(9, lept_get_array_size(&a));
+    for (i = 0; i < 9; i++) {
+        EXPECT_EQ_DOUBLE((double)i, lept_get_number(lept_get_array_element(&a, i)));
+    }
+    lept_erase_array_element(&a, 4, 0);
+    EXPECT_EQ_SIZE_T(9, lept_get_array_size(&a));
+    for (i = 0; i < 9; i++) {
+        EXPECT_EQ_DOUBLE((double)i, lept_get_number(lept_get_array_element(&a, i)));
+    }
+    lept_erase_array_element(&a, 8, 1);
+    EXPECT_EQ_SIZE_T(8, lept_get_array_size(&a));
+    for (i = 0; i < 8; i++) {
+        EXPECT_EQ_DOUBLE((double)i, lept_get_number(lept_get_array_element(&a, i)));
+    }
+    lept_erase_array_element(&a, 0, 2);
+    EXPECT_EQ_SIZE_T(6, lept_get_array_size(&a));
+    for (i = 0; i < 6; i++) {
+        EXPECT_EQ_DOUBLE((double)i + 2, lept_get_number(lept_get_array_element(&a, i)));
+    }
+    for (i = 0; i < 2; i++) {
+        lept_set_number(lept_insert_array_element(&a, i), i);
+    }
+    EXPECT_EQ_SIZE_T(8, lept_get_array_size(&a));
+    for (i = 0; i < 8; i++) {
+        EXPECT_EQ_DOUBLE((double)i, lept_get_number(lept_get_array_element(&a, i)));
+    }
+    EXPECT_TRUE(lept_get_array_capacity(&a) > 8);
+    lept_shrink_array(&a);
+    EXPECT_EQ_SIZE_T(8, lept_get_array_capacity(&a));
+    EXPECT_EQ_SIZE_T(8, lept_get_array_size(&a));
+    for (i = 0; i < 8; i++) {
+        EXPECT_EQ_DOUBLE((double)i, lept_get_number(lept_get_array_element(&a, i)));
+    }
+    lept_set_string(lept_pushback_array_element(&a), "Hello", 5);
+    i = lept_get_array_capacity(&a);
+    lept_clear_array(&a);
+    EXPECT_EQ_SIZE_T(0, lept_get_array_size(&a));
+    EXPECT_EQ_SIZE_T(i, lept_get_array_capacity(&a));   /* capacity remains unchanged */
+    lept_shrink_array(&a);
+    EXPECT_EQ_SIZE_T(0, lept_get_array_capacity(&a));
+    lept_free(&a);
+}
+
 #define TEST_ROUNDTRIP(json)\
     do {\
         lept_value v;\
@@ -497,6 +558,7 @@ static void test_access()
     test_access_boolean();
     test_access_number();
     test_access_string();
+    test_access_array();
 }
 
 static void test_stringify()

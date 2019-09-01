@@ -18,7 +18,7 @@ struct lept_value {
         } o;  /* object: members, member count */
         struct {
             lept_value *e;
-            size_t size;
+            size_t size, capacity;
         } a;   /* array:  elements, element count */
         struct {
             char *s;
@@ -52,31 +52,49 @@ enum {
     LEPT_PARSE_MISS_COMMA_OR_CURLY_BRACKET
 };
 
+/* parse and stringify */
 int lept_parse(lept_value *v, const char *json);
 char *lept_stringify(const lept_value *v, size_t *length);
 
+/* init and free */
 #define lept_init(v) do { (v)->type = LEPT_NULL; } while(0)
 void lept_free(lept_value *v);
-
 #define lept_set_null(v) lept_free(v)
 
+/* general */
 int lept_is_equal(const lept_value *lhs, const lept_value *rhs);
-
 lept_type lept_get_type(const lept_value *v);
 
+/* number */
 double lept_get_number(const lept_value *v);
 void lept_set_number(lept_value *v, double n);
 
+/* boolean */
 int lept_get_boolean(const lept_value *v);
 void lept_set_boolean(lept_value *v, int b);
 
+/* string */
 const char *lept_get_string(const lept_value *v);
 size_t lept_get_string_length(const lept_value *v);
 void lept_set_string(lept_value *v, const char *s, size_t len);
 
+/* array*/
+/*     read     */
 size_t lept_get_array_size(const lept_value *v);
 lept_value *lept_get_array_element(const lept_value *v, size_t index);
+size_t lept_get_array_capacity(const lept_value *v);
+/*     write     */
+void lept_set_array(lept_value *v, size_t capacity);
+void lept_reserve_array(lept_value *v, size_t capacity);
+void lept_shrink_array(lept_value *v);
+void lept_clear_array(lept_value *v);
+lept_value *lept_pushback_array_element(lept_value *v);
+void lept_popback_array_element(lept_value *v);
+lept_value *lept_insert_array_element(lept_value *v, size_t index);
+void lept_erase_array_element(lept_value *v, size_t index, size_t count);
 
+/* object */
+/*     read     */
 size_t lept_get_object_size(const lept_value *v);
 const char *lept_get_object_key(const lept_value *v, size_t index);
 size_t lept_get_object_key_length(const lept_value *v, size_t index);
