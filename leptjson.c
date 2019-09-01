@@ -866,6 +866,7 @@ void lept_copy(lept_value *dst, const lept_value *src)
         case LEPT_ARRAY:
             lept_set_array(dst, src->u.a.size);
             for(i = 0; i != src->u.a.size; ++i) {
+                lept_init(dst->u.a.e + i);
                 lept_copy(dst->u.a.e + i, src->u.a.e + i);
             }
             dst->u.a.size = src->u.a.size;
@@ -877,6 +878,7 @@ void lept_copy(lept_value *dst, const lept_value *src)
                 dst->u.o.m[i].k = (char *)malloc(dst->u.o.m[i].klen + 1);
                 memcpy(dst->u.o.m[i].k, src->u.o.m[i].k, dst->u.o.m[i].klen);
                 dst->u.o.m[i].k[dst->u.o.m[i].klen] = '\0';
+                lept_init(&dst->u.o.m[i].v);
                 lept_copy(&dst->u.o.m[i].v, &src->u.o.m[i].v);
             }
             dst->u.o.size = src->u.o.size;
