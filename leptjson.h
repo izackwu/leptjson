@@ -64,6 +64,9 @@ void lept_free(lept_value *v);
 /* general */
 int lept_is_equal(const lept_value *lhs, const lept_value *rhs);
 lept_type lept_get_type(const lept_value *v);
+void lept_copy(lept_value *dst, const lept_value *src);
+void lept_move(lept_value *dst, lept_value *src);
+void lept_swap(lept_value *lhs, lept_value *rhs);
 
 /* number */
 double lept_get_number(const lept_value *v);

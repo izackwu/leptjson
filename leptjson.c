@@ -854,3 +854,55 @@ int lept_is_equal(const lept_value *lhs, const lept_value *rhs)
             return 1;
     }
 }
+
+void lept_copy(lept_value *dst, const lept_value *src)
+{
+    size_t i;
+    assert(src != NULL && dst != NULL && src != dst);
+    switch (src->type) {
+        case LEPT_STRING:
+            lept_set_string(dst, src->u.s.s, src->u.s.len);
+            break;
+        case LEPT_ARRAY:
+            lept_set_array(dst, src->u.a.size);
+            for(i = 0; i != src->u.a.size; ++i) {
+                lept_copy(dst->u.a.e + i, src->u.a.e + i);
+            }
+            dst->u.a.size = src->u.a.size;
+            break;
+        case LEPT_OBJECT:
+            lept_set_object(dst, src->u.o.size);
+            for(i = 0; i != src->u.o.size; ++i) {
+                dst->u.o.m[i].klen = src->u.o.m[i].klen;
+                dst->u.o.m[i].k = (char *)malloc(dst->u.o.m[i].klen + 1);
+                memcpy(dst->u.o.m[i].k, src->u.o.m[i].k, dst->u.o.m[i].klen);
+                dst->u.o.m[i].k[dst->u.o.m[i].klen] = '\0';
+                lept_copy(&dst->u.o.m[i].v, &src->u.o.m[i].v);
+            }
+            dst->u.o.size = src->u.o.size;
+            break;
+        default:
+            lept_free(dst);
+            memcpy(dst, src, sizeof(lept_value));
+            break;
+    }
+}
+
+void lept_move(lept_value *dst, lept_value *src)
+{
+    assert(dst != NULL && src != NULL && src != dst);
+    lept_free(dst);
+    memcpy(dst, src, sizeof(lept_value));
+    lept_init(src);
+}
+
+void lept_swap(lept_value *lhs, lept_value *rhs)
+{
+    assert(lhs != NULL && rhs != NULL);
+    if (lhs != rhs) {
+        lept_value temp;
+        memcpy(&temp, lhs, sizeof(lept_value));
+        memcpy(lhs,   rhs, sizeof(lept_value));
+        memcpy(rhs, &temp, sizeof(lept_value));
+    }
+}
