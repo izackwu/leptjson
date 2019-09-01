@@ -5,6 +5,8 @@
 
 typedef enum { LEPT_NULL, LEPT_FALSE, LEPT_TRUE, LEPT_NUMBER, LEPT_STRING, LEPT_ARRAY, LEPT_OBJECT } lept_type;
 
+#define LEPT_KEY_NOT_EXIST ((size_t)-1)
+
 typedef struct lept_value lept_value;
 typedef struct lept_member lept_member;
 
@@ -58,6 +60,8 @@ void lept_free(lept_value *v);
 
 #define lept_set_null(v) lept_free(v)
 
+int lept_is_equal(const lept_value *lhs, const lept_value *rhs);
+
 lept_type lept_get_type(const lept_value *v);
 
 double lept_get_number(const lept_value *v);
@@ -77,5 +81,7 @@ size_t lept_get_object_size(const lept_value *v);
 const char *lept_get_object_key(const lept_value *v, size_t index);
 size_t lept_get_object_key_length(const lept_value *v, size_t index);
 lept_value *lept_get_object_value(const lept_value *v, size_t index);
+size_t lept_find_object_index(const lept_value *v, const char *key, size_t klen);
+lept_value *lept_find_object_value(const lept_value *v, const char *key, size_t klen);
 
 #endif /* LEPTJSON_H__ */
