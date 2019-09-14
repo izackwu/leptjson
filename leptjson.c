@@ -503,7 +503,7 @@ size_t lept_get_array_capacity(const lept_value *v)
 lept_value *lept_get_array_element(const lept_value *v, size_t index)
 {
     assert(v != NULL && v->type == LEPT_ARRAY);
-    assert(0 <= index && index < v->u.a.size);
+    assert(index < v->u.a.size);
     return v->u.a.e + index;
 }
 
@@ -563,7 +563,7 @@ lept_value *lept_insert_array_element(lept_value *v, size_t index)
 {
     size_t i;
     assert(v != NULL && v->type == LEPT_ARRAY);
-    assert(0 <= index && index <= v->u.a.size);   /* if index == size, then this's equivalent to pushback*/
+    assert(index <= v->u.a.size);   /* if index == size, then this's equivalent to pushback*/
     if (v->u.a.size == v->u.a.capacity) {
         lept_reserve_array(v, v->u.a.capacity == 0 ? 1 : v->u.a.capacity * 2);
     }
@@ -577,7 +577,7 @@ void lept_erase_array_element(lept_value *v, size_t index, size_t count)
 {
     size_t i;
     assert(v != NULL && v->type == LEPT_ARRAY);
-    assert(0 <= index && 0 <= count && index + count <= v->u.a.size);
+    assert(0 <= count && index + count <= v->u.a.size);
     if(!count) {
         return;
     }
@@ -606,21 +606,21 @@ size_t lept_get_object_capacity(const lept_value *v)
 const char *lept_get_object_key(const lept_value *v, size_t index)
 {
     assert(v != NULL && v->type == LEPT_OBJECT);
-    assert(0 <= index && index < v->u.o.size);
+    assert(index < v->u.o.size);
     return (v->u.o.m + index)->k;
 }
 
 size_t lept_get_object_key_length(const lept_value *v, size_t index)
 {
     assert(v != NULL && v->type == LEPT_OBJECT);
-    assert(0 <= index && index < v->u.o.size);
+    assert(index < v->u.o.size);
     return (v->u.o.m + index)->klen;
 }
 
 lept_value *lept_get_object_value(const lept_value *v, size_t index)
 {
     assert(v != NULL && v->type == LEPT_OBJECT);
-    assert(0 <= index && index < v->u.o.size);
+    assert(index < v->u.o.size);
     return &((v->u.o.m + index)->v);
 }
 
@@ -699,7 +699,7 @@ lept_value *lept_set_object_value(lept_value *v, const char *key, size_t klen)
 void lept_remove_object_value(lept_value *v, size_t index)
 {
     assert(v != NULL && v->type == LEPT_OBJECT);
-    assert(0 <= index && index < v->u.o.size);
+    assert(index < v->u.o.size);
     free(v->u.o.m[index].k);
     lept_free(&v->u.o.m[index].v);
     while(index <= v->u.o.size - 2) {

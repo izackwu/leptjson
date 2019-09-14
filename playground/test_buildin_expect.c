@@ -11,7 +11,7 @@
 void without_buildin_expect(int n)
 {
     clock_t before = clock();
-    int i, bias, useless;
+    int i, bias, useless = 0;
     for(i = 0, bias = 0; i != n; ++i) {
         if(rand() + 123 < RAND_MAX / 100) {
             ++bias;
@@ -30,7 +30,7 @@ void without_buildin_expect(int n)
 void with_buildin_expect(int n)
 {
     clock_t before = clock();
-    int i, bias, useless;
+    int i, bias, useless = 0;
     for(i = 0, bias = 0; i != n; ++i) {
         if(UNLIKELY(rand() + 123 < RAND_MAX / 100)) {
             ++bias;
