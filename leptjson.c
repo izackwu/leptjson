@@ -577,7 +577,7 @@ void lept_erase_array_element(lept_value *v, size_t index, size_t count)
 {
     size_t i;
     assert(v != NULL && v->type == LEPT_ARRAY);
-    assert(0 <= count && index + count <= v->u.a.size);
+    assert(index + count <= v->u.a.size);
     if(!count) {
         return;
     }
