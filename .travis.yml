@@ -12,6 +12,7 @@ addons:
 script:
   - export CC=gcc-7
   - export CXX=g++-7
+  - gcc --version
   - cmake --version
   - cmake CMakeLists.txt
-  - cmake  --build . --target neat
+  - cmake  --build .
